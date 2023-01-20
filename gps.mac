@@ -1,0 +1,22 @@
+#
+/gps/position 0. 0.  3. cm
+/gps/energy   0. MeV
+/gps/particle  ion
+/gps/ion      27 60
+#
+#-----
+# Proton beam
+#-----
+#/gps/particle    proton
+#/gps/ene/type   Gauss      
+#/gps/ene/mono  150.0  MeV
+#/gps/position   0. 0. 1.5 m
+#/gps/direction  0. 0. -1.
+#/gps/ene/sigma  2.0 MeV
+#/gps/pos/type   Beam
+#/gps/pos/sigma_x  5.0 mm
+#/gps/pos/sigma_y  5.0 mm
+#/gps/ang/type   beam2d
+#/gps/ang/sigma_x  10 mrad
+#/gps/ang/sigma_y  10 mrad 
+#---

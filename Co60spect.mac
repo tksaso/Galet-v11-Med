@@ -1,0 +1,8 @@
+#
+/run/printProgress 100000
+#
+/control/execute Co60.mac
+#
+/Galet/runAction/outFile  Co60spec.root
+#
+##/run/beamOn 100000

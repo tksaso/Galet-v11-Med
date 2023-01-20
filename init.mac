@@ -1,0 +1,19 @@
+#
+# Galet macro: init.mac
+#
+/control/verbose 2
+/control/saveHistory
+/run/verbose 1
+#
+# material definition
+/control/execute  material.mac
+#
+# physics list
+/control/execute phys.mac
+#
+# Initialize kernel
+/run/initialize
+#
+# Primary particle
+/control/execute gps.mac
+#

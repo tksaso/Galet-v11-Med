@@ -1,0 +1,6 @@
+#
+/gps/position 0. 0.  3. cm
+/gps/energy   0. MeV
+/gps/particle  ion
+/gps/ion      55 137
+#

@@ -1,0 +1,13 @@
+#
+#
+/G4M/Material/path ./data/material
+#
+/G4M/Element/useG4Element TRUE
+/G4M/Material/create G4_AIR
+/G4M/Material/create G4_WATER
+/G4M/Material/create G4_Al
+/G4M/Material/create G4_Ge
+/G4M/Material/create G4_POLYETHYLENE
+####
+/G4M/Material/create Acrylic
+####

@@ -1,0 +1,11 @@
+# 
+# Can be run in batch, without graphic
+#
+# Initialize 
+/control/execute init.mac
+#
+# Output file name (extension options: .root, .csv, .xml)
+/Galet/runAction/outFile  Galet.root
+#
+/run/beamOn 100000
+#

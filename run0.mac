@@ -1,0 +1,6 @@
+#
+## Mandatory for initialization
+/control/execute init.mac
+#
+## Start simulation
+/run/beamOn 1

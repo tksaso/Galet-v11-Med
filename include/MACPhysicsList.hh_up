@@ -1,0 +1,58 @@
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//
+// PhysicsList.hh
+//
+// [Description]
+//   Physics list for the P152 (NIRS) experiment.
+//
+// [Histoy]
+//   8 April, 2003  K. Amako : The 1st version created.
+//                  T. Aso   : Maintained for HIBMC simulation.
+//  18 May,   2009  T. Aso   : Merge with G4 Physics-list.
+//  2013-03-27 T.Aso Add entries for processes in parallel world geometries.
+//
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#ifndef MACPhysicsList_h
+#define MACPhysicsList_h 1
+
+#include "globals.hh" 
+#include "G4VModularPhysicsList.hh"
+
+#include "MACPhysicsListMessenger.hh"
+#include <vector>
+
+/******************************************************************************/
+ class MACPhysicsList: public G4VModularPhysicsList
+/******************************************************************************/
+{
+public:
+  MACPhysicsList();
+  ~MACPhysicsList() override;
+  
+  // SetCuts() 
+  void SetCuts() override;
+
+public:
+  void RegisterPhysicsModule(G4String& newValue);
+  void RegisterParallelWorldModule(G4String& namePW,G4bool layered);
+  void SetStepLimitForRegion(G4double stepValue,const G4String& rname);
+
+
+private:
+  MACPhysicsListMessenger* fPhysListMessenger=nullptr;
+
+  G4VPhysicsConstructor* fEmProcess=nullptr;
+  G4VPhysicsConstructor* fHadronElasticProcess=nullptr;
+  G4VPhysicsConstructor* fHadronInElasticProcess=nullptr;
+  G4VPhysicsConstructor* fStoppingProcess=nullptr;
+  G4VPhysicsConstructor* fRadioactiveProcess=nullptr;
+  G4VPhysicsConstructor* fIonInElasticProcess=nullptr;
+  G4VPhysicsConstructor* fDecayProcess=nullptr;
+  G4VPhysicsConstructor* fOpticalProcess=nullptr;  
+
+};
+
+#endif
+
+
+

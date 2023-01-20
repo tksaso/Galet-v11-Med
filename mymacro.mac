@@ -1,0 +1,6 @@
+/control/execute  init.mac
+/run/printProgress 100000
+#
+/control/execute mygun.mac
+#
+/run/beamOn 100000

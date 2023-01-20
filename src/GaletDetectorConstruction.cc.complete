@@ -1,0 +1,274 @@
+//
+//  GaletDetectorConstruction.cc 
+// 
+#include "GaletDetectorConstruction.hh"
+#include "GaletSD.hh"
+#include "GaletPhantom.hh"
+#include "GaletMagneticField.hh"
+//
+#include "G4SDManager.hh"
+#include "G4Material.hh"
+#include "G4NistManager.hh"
+//
+#include "G4MMaterialFileConstruction.hh"
+
+#include "GaletDetectorConstructionMessenger.hh"
+
+#include "G4Box.hh"
+#include "G4Tubs.hh"
+#include "G4LogicalVolume.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4PVPlacement.hh"
+#include "G4PVReplica.hh"
+#include "G4GlobalMagFieldMessenger.hh"
+#include "G4AutoDelete.hh"
+#include "G4TransportationManager.hh"
+#include "G4SDManager.hh"
+#include "G4FieldManager.hh"
+
+#include "G4VisAttributes.hh"
+#include "G4Colour.hh"
+
+#include "G4PhysicalConstants.hh"
+#include "G4SystemOfUnits.hh"
+
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+GaletDetectorConstruction::GaletDetectorConstruction()
+ : G4VUserDetectorConstruction(){
+  materialConstructor = new G4MMaterialFileConstruction;
+  messenger = new GaletDetectorConstructionMessenger(this);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+GaletDetectorConstruction::~GaletDetectorConstruction(){ 
+  delete materialConstructor;
+  delete messenger;
+}  
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+G4VPhysicalVolume* GaletDetectorConstruction::Construct(){
+  // Define materials 
+  DefineMaterials();
+  // Define volumes
+  return DefineVolumes();
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void GaletDetectorConstruction::DefineMaterials(){ 
+  // Print materials
+  G4cout << *(G4Material::GetMaterialTable()) << G4endl;
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+G4VPhysicalVolume* GaletDetectorConstruction::DefineVolumes(){
+  // Geometry parameters
+  G4double worldSizeX = 100.*cm;
+  G4double worldSizeY = 100.*cm;
+  G4double worldSizeZ  = 300.*cm; 
+  //     
+  // World Volume
+  //
+  G4VSolid* worldS 
+    = new G4Box("WorldS", worldSizeX/2, worldSizeY/2, worldSizeZ/2);
+  //           ( name, Half size X, Half size Y, Half size Z) 
+                         
+  G4LogicalVolume* worldLV
+    = new G4LogicalVolume(worldS, G4Material::GetMaterial("G4_AIR"),"WorldLV");
+  //                     ( solid,            Material,               name)   
+                                   
+  G4VPhysicalVolume* worldPV
+    = new G4PVPlacement(nullptr,          // no rotation
+			G4ThreeVector(),  // at (0,0,0)
+			worldLV,          // its logical volume
+			"WorldPV",        // its name
+			0,                // its mother  volume
+			false,            // no boolean operation
+			0,                // copy number
+			fCheckOverlaps);  // checking overlaps
+  // Visualization attributes
+  //worldLV->SetVisAttributes (G4VisAttributes::Invisible);
+
+  //
+  //  Phantom
+  //
+  
+  GaletPhantom* phantom = new GaletPhantom("phantomVoxelLV");
+  phantom->SetDensityResolution(0.01*g/cm3); // Default
+  phantom->SetMaxDensity(2.00*g/cm3);  //Default 2.8g/cm3
+  phantom->CreateMaterialList();
+  //
+  //  Homogeneous Water Phantom
+  //
+  //G4double dx=15.0*cm; G4double dy=15.0*cm; G4double dz=20.0*cm;
+  //G4int nx=150; G4int ny=150; G4int nz=200;  
+  //G4bool onSurfIso=true;  
+  //G4bool mosaic=false;
+  //phantom->ReadDummyVTK(dx,dy,dz,nx,ny,nz,onSurfIso,mosaic);
+  //
+  phantom->ReadVTK("WPhantom.vtk");
+  // --Visualization
+  phantom->SetVisOn(false);
+  G4LogicalVolume* phantomLV = phantom->ConstructPhantom();
+  G4RotationMatrix* rotation = new G4RotationMatrix();
+  rotation->rotateY(180.*degree);
+  G4ThreeVector& position = phantom->GetCenterCoord();
+  //
+    new G4PVPlacement(rotation, position, phantomLV, "PhantomPV",
+		      worldLV, false,  0, fCheckOverlaps);
+    //               (Rotation, Position, logical, name,
+    //                Mother-Logical,boolean-operation, copyNo, check overlaps) 
+  //
+  
+  //                               
+  // Range Shifter
+  //
+  
+  G4double RSRadius  = 30.*cm;
+  G4double RSThick  =  2.*cm;
+  G4VSolid* RSS
+    = new G4Tubs("RSS", 0., RSRadius, RSThick/2., 0., twopi);
+  //            (name, Rin, Rout, Rz, start angle, dphi )
+                       
+  G4LogicalVolume* RSLV
+    = new G4LogicalVolume(RSS, G4Material::GetMaterial("G4_POLYETHYLENE"), "RSLV");
+  //                     ( solid,            Material,               name)     
+
+  G4RotationMatrix* RSrot=new G4RotationMatrix();
+ //RSrot->rotateX(0.*degree); RSrot->rotateY(0.*degree); RSrot->rotateZ(0.*degree);
+  G4ThreeVector RStran(0,0,30.*cm);
+  // G4VPhysicalVolume* RSPhys =
+  new G4PVPlacement(RSrot, RStran, RSLV, "RSPV",
+		    worldLV, false, 0, fCheckOverlaps);
+    //               (Rotation, Position, logical, name,
+    //                Mother-Logical,boolean-operation, copyNo, check overlaps) 
+  
+  //
+  G4VisAttributes* RSVisAtt= 
+    new G4VisAttributes(G4Colour(1.0,0.0,0.0,0.8));
+  RSVisAtt->SetVisibility(true);
+  RSLV->SetVisAttributes(RSVisAtt);
+  
+  //
+  // Second Range Shifter
+  //
+  
+  G4ThreeVector RStran2(0,0,20.*cm);  
+  // G4VPhysicalVolume* RSPhys2 =
+  new G4PVPlacement(nullptr, RStran2, RSLV, "RSPV",
+		    worldLV, false, 1, fCheckOverlaps);
+    //               (Rotation, Position, logical, name,
+    //                Mother-Logical,boolean-operation, copyNo, check overlaps) 
+  
+  //                               
+  // Magnetic Field Box for X (0,By,0)
+  //
+  
+  G4double MFBSizeX  = 300.*mm;
+  G4double MFBSizeY  = 300.*mm;
+  G4double MFBSizeZ  = 200.*mm;
+  //
+  G4VSolid* MFBS
+    = new G4Box("MFBS", MFBSizeX/2., MFBSizeY/2.,MFBSizeZ/2. );
+  //           ( name, Half size X, Half size Y, Half size Z)   
+                         
+  G4LogicalVolume* MFBLVx
+    = new G4LogicalVolume(MFBS, G4Material::GetMaterial("G4_AIR"), "MFBLVx");
+  //                     ( solid,            Material,               name)     
+
+  G4ThreeVector MFBtranx(0,0,70*cm);
+  // G4VPhysicalVolume* MFBPhys =
+  new G4PVPlacement(nullptr, MFBtranx, MFBLVx, "MFBPVx",
+		    worldLV, false, 0, fCheckOverlaps);
+    //               (Rotation, Position, logical, name,
+    //                Mother-Logical,boolean-operation, copyNo, check overlaps) 
+
+  G4VisAttributes* MFBVisAtt= 
+    new G4VisAttributes(G4Colour(0.0,0.0,1.0,0.5));
+  MFBVisAtt->SetVisibility(true);
+  MFBLVx->SetVisAttributes(MFBVisAtt);
+  
+  //
+  //  Magnetic Field for Y ( Bx, 0, 0 )
+  //
+  
+  G4LogicalVolume* MFBLVy
+    = new G4LogicalVolume(MFBS, G4Material::GetMaterial("G4_AIR"), "MFBLVy");
+  //                     ( solid,            Material,               name)     
+
+  G4ThreeVector MFBtrany(0,0,90*cm);
+  // G4VPhysicalVolume* MFBPhys =
+  new G4PVPlacement(nullptr, MFBtrany, MFBLVy, "MFBPVy",
+		    worldLV, false, 0, fCheckOverlaps);
+    //               (Rotation, Position, logical, name,
+    //                Mother-Logical,boolean-operation, copyNo, check overlaps) 
+  MFBLVy->SetVisAttributes(MFBVisAtt);  
+  
+  //
+  // Always return the physical World
+  //
+  return worldPV;
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void GaletDetectorConstruction::ConstructSDandField(){
+  G4SDManager::GetSDMpointer()->SetVerboseLevel(1);
+  // 
+  // Sensitive detectors
+  //
+  
+  auto galetSD = new GaletSD("galetSD", "GaletHitsCollection",0);
+  galetSD->SetDepth(1,2,0); // Geometric hierarchy.
+  G4String sdname_lv = "phantomVoxelLV";
+  //
+  G4SDManager::GetSDMpointer()->AddNewDetector(galetSD);
+  SetSensitiveDetector(sdname_lv,galetSD);
+  
+  //
+  // Magnetic Field for X
+  //
+
+  G4String fieldnamex_LV = "MFBLVx";
+  auto magFieldx  = new GaletMagneticField(fieldnamex_LV);  
+  //
+  SetMagneticField(fieldnamex_LV, magFieldx);
+  
+  //
+  // Magnetic Field for Y
+  //
+  
+  G4String fieldnamey_LV = "MFBLVy";
+  auto magFieldy  = new GaletMagneticField(fieldnamey_LV);
+  magFieldy->SetFieldY(0.);
+  magFieldy->SetFieldX(1.*tesla);  
+  //
+  SetMagneticField(fieldnamey_LV, magFieldy);
+  
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void GaletDetectorConstruction::SetMagneticField(const G4String& name_lv,
+						 GaletMagneticField* field, G4bool forceToAllDaughters){  
+  G4LogicalVolume* fieldLV =
+    G4LogicalVolumeStore::GetInstance()->GetVolume(name_lv);
+  if ( fieldLV ){
+    G4FieldManager* fieldManager = fieldLV->GetFieldManager();
+    if ( fieldManager ) {
+      fieldManager->SetDetectorField(field);
+    }else{
+      fieldManager = new G4FieldManager(field);
+    }
+    
+    fieldLV->SetFieldManager(fieldManager,forceToAllDaughters);
+  }else{
+    G4cerr << "%%Error GaletDetectorConstruction::SetMAgneticField!!"
+	   << " setup failed for LV= "<< name_lv <<G4endl;
+    exit(-1);
+  }
+}

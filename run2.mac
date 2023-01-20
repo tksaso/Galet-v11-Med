@@ -1,0 +1,15 @@
+# 
+# To be run preferably in batch, without graphics:
+#
+#/run/numberOfWorkers 4
+##
+#####/control/execute init.mac
+#
+#
+/gps/particle e-
+/gps/position 0 0 2.0 m
+/gps/direction 0 0 -1
+/gps/energy 1 MeV
+/run/printProgress 100
+/run/beamOn 1000
+
